@@ -2,6 +2,7 @@ package com.wuweibi.module4j;
 
 
 
+import com.wuweibi.module4j.config.Configuration;
 import com.wuweibi.module4j.exception.GroovyActivatorLoadException;
 import com.wuweibi.module4j.exception.PackageJsonNotFoundException;
 import com.wuweibi.module4j.exception.StartModuleActivatorException;
@@ -12,6 +13,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
+import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
 
@@ -26,28 +28,25 @@ public class ModuleFramework {
 	
 	private final Logger logger = LoggerFactory.getLogger(ModuleFramework.class);
 	
-	// 模块上下文名称
-	public final static String MODULE_CONTEXT = "mrcms_moduleContext";
-	
-	// 自动部署目录
-	public final static  String DIR_MODULES  = "MSEI.auto.deploy.dir";
-	
-	// 缓存目录
-	public final static String DIR_CACHE = "MSEI.cache.rootdir";
-	
-	// 日志级别
-	public final static String LOG_LEVEL = "MSEI.log.level";
-	
-	
-	
-	
-	private ModuleContext context = new ModuleContext();
 
-    Map<String, String> config;
-	
-	
-	public ModuleFramework(Map<String, String> config) throws Exception {
-		this.config = config;
+
+
+    private Map<String, String> config;
+
+
+    /***
+     * 模块上下文对象
+     */
+    private ModuleContext context;
+
+
+    private Configuration configuration;
+
+
+    public ModuleFramework(Map<String, String> config) throws Exception {
+		this.config = Collections.synchronizedMap(config);
+        this.configuration = new Configuration(config);
+        context = new ModuleContext(config);
 	} 
 
 	 
@@ -64,11 +63,11 @@ public class ModuleFramework {
      * 启动
      */
     public void start() throws Exception {
-        String modulesDir = config.get(DIR_MODULES);
+        String modulesDir =  configuration.getModulesDeployDir() ;
 //		String modulesCache = config.get(DIR_CACHE);
 
         if(null == modulesDir){
-            throw new Exception("配置信息缺失：" + DIR_MODULES);
+            throw new Exception("配置信息缺失：" + configuration.getModulesDeployDir());
         }
 
 

@@ -1,10 +1,18 @@
-{ 
-    "icon" : "images/demo.jpg",
+{
+    "id":"5564564656446656",
 	"name"  : "栏目模块",
 	"author": "marker",
+	"version" : "0.1.0",
+	"description" : "系统核心模块",
+    "icon" : "images/demo.jpg",
+	"activator":"./src/activator.groovy",
+	"dependencies":{
+		"baidumapkit": "^1.1.0"
+	},
 	"git": "",
-	"version" : "0.1", 
-	"description" : "系统核心模块", 
-	"activator":"src/activator.groovy",
+	"expand":{
+
+	},
+
 	"backup":"article"
 }

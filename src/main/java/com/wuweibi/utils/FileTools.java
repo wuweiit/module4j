@@ -61,8 +61,8 @@ public class FileTools {
 	
 	
 	//内部处理文件方法
-	private static String getContent(File filePath, String character) throws IOException{ 
-		FileInputStream __fis = new FileInputStream(filePath);//文件字节流 
+	private static String getContent(File filePath, String character) throws IOException{
+		FileInputStream __fis = new FileInputStream(filePath);//文件字节流
 		return getStreamContent(__fis, character);//返回文件内容
 	}
 	
@@ -295,6 +295,32 @@ public class FileTools {
 
 
 
+	/**
+	 * 拷贝某个文件目录下面的所有文件，
+	 * @param sourcePath 原文件目录
+	 * @param desPath 目的文件目录
+	 */
+	public static void copyFiles(File sourceFile, File desFile) throws IOException{
+		if(sourceFile.isFile()){
+			File file = new File(desFile.getPath()+"/"+sourceFile.getName());
+			FileInputStream fis = new FileInputStream(sourceFile);
+			FileOutputStream fos = new FileOutputStream(file);
+			int len = 0;
+			byte[] buf = new byte[1024];
+			while((len = fis.read(buf)) != -1)
+				fos.write(buf,0,len);
+            fos.flush();
+            fos.close();
+		}else{
+			File dir = new File(desFile.getPath()+"/"+sourceFile.getName());
+			if(!dir.exists())
+				dir.mkdirs();
+			String[] names = sourceFile.list();
+			for (int i = 0; i < names.length; i++) {
+				copyFiles(new File(sourceFile.getPath()+"/"+names[i]),dir);
+			}
+		}
+	}
 
 
 	

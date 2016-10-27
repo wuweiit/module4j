@@ -4,6 +4,7 @@ package com.wuweibi.module4j.module;
 import com.alibaba.fastjson.JSON;
 import com.wuweibi.module4j.ModuleActivator;
 import com.wuweibi.module4j.ModuleFramework;
+import com.wuweibi.module4j.config.Configuration;
 import com.wuweibi.module4j.exception.GroovyActivatorLoadException;
 import com.wuweibi.module4j.exception.PackageJsonNotFoundException;
 import com.wuweibi.module4j.exception.StopModuleActivatorException;
@@ -12,11 +13,13 @@ import com.wuweibi.module4j.groovy.ScriptClassLoader;
 import com.wuweibi.utils.FileTools;
 import groovy.lang.GroovyObject;
 import groovy.util.GroovyScriptEngine;
+import org.codehaus.groovy.tools.GroovyClass;
+import org.objectweb.asm.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.File;
-import java.io.IOException;
+import java.io.*;
+import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -24,50 +27,151 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 
+
 /**
  * 模块容器，用于存取模块
+ *
+ *
+ *
+ *
  * @author marker
  * @version 1.0
  */
 public class ModuleContext {
+	/** 日志记录 */
 	private final Logger logger = LoggerFactory.getLogger(ModuleContext.class);
 
 	// 线程安全集合
 	private Map<String,Module> modules = new ConcurrentHashMap<String,Module>();
-	
-	
-	public Module install(File moduleFile) throws PackageJsonNotFoundException, GroovyActivatorLoadException {
-		if(moduleFile.isDirectory()){ 
-			// 配置文件路径
-			String packageJson = moduleFile.getAbsolutePath() + File.separator + "package.json";
-			logger.info("loading {}",packageJson);
 
-			String json = "{\"error\":\"invalid config info\"}";
-			try {
-				json = FileTools.getFileContet(new File(packageJson), FileTools.FILE_CHARACTER_UTF8);
-			} catch (IOException e) {
-				throw new PackageJsonNotFoundException();
-			}
+
+	private Map<String, String> config;
+
+	private Configuration configuration;
+
+
+	/**
+	 * 构造
+	 * @param config
+	 */
+	public ModuleContext(Map<String, String> config) {
+		this.configuration = new Configuration(config);
+
+
+
+	}
+
+
+	/**
+	 * 安装模块
+	 * @param moduleFilePath 模块路径
+	 * @return
+	 * @throws PackageJsonNotFoundException
+	 * @throws GroovyActivatorLoadException
+	 */
+	public Module install(String moduleFilePath) throws PackageJsonNotFoundException, GroovyActivatorLoadException {
+		File moduleFile = new File(moduleFilePath);
+		if(!moduleFile.exists()){
+			logger.warn("modulefilepath[{}] not exists!", moduleFilePath);
+			return null;
+		}
+		return install(moduleFile);
+	}
+
+	/**
+	 * 安装模块
+	 * @param moduleFile
+	 * @return
+	 * @throws PackageJsonNotFoundException
+	 * @throws GroovyActivatorLoadException
+	 */
+	public Module install(File moduleFile) throws GroovyActivatorLoadException, PackageJsonNotFoundException {
+		// 校验模块完整性
+
+
+
+
+        // 读取 packageJson
+        String packageJson = moduleFile.getAbsolutePath() + File.separator + "package.json";
+        logger.info("loading {}",packageJson);
+
+        String json = "{\"error\":\"invalid config info\"}";
+        try {
+            json = FileTools.getFileContet(new File(packageJson), FileTools.FILE_CHARACTER_UTF8);
+        } catch (IOException e) {
+            throw new PackageJsonNotFoundException();
+        }
+
+        @SuppressWarnings("unchecked")
+        Map<String,Object> config = (Map<String, Object>) JSON.parse(json);
+
+
+	    // 判断上级路径是否是模块目录
+		File parentFile = moduleFile.getParentFile();
+
+        File modulesFile = new File(configuration.getModulesDeployDir());
+        String a = modulesFile.getAbsolutePath();
+        String b = parentFile.getAbsolutePath();
+		if(a.equals(b)){// 若路径相同
+
+		}else{// 路径不同
+            // 拷贝文件夹到模块目录
+            String moduleId  = (String)config.get("id");
+
+            File toFile = new File(modulesFile.getAbsolutePath() +File.separator);
+
+            try {
+                logger.info("file copy....");
+                FileTools.copyFiles(moduleFile, toFile);
+                String toFile2 = toFile.getPath()+File.separator+moduleFile.getName();
+                File file2 = new File(toFile2);
+                File file3 = new File(toFile.getPath()+File.separator+ moduleId);
+                file2.renameTo(file3);
+                moduleFile =file3;
+            } catch (IOException e) {
+                logger.error("",e);
+            }
+
+        }
+
+		if(moduleFile.isDirectory()){
+
+            String activatorFile = configuration.getActivatorFile().replaceFirst(".groovy","");
 			
-			@SuppressWarnings("unchecked")
-			Map<String,Object> config = (Map<String, Object>) JSON.parse(json);
-			config.put(Module.CONFIG_UUID, moduleFile.getName());// 设置模块唯一码
- 
-			
-			String src = moduleFile.getAbsolutePath() + File.separator + "src"; 
+			String src = moduleFile.getAbsolutePath() + File.separator;
 			 
 			ScriptClassLoader loader = new ScriptClassLoader(src);
 			
-			GroovyObject obj;
+			Object obj;
 			try {
 
 				logger.info("start groovy engine...");
 //				GroovyScriptEngine gse = new GroovyScriptEngine(src, this.getClass().getClassLoader());
 
 				logger.info("start load groovy script...");
-				Class<?> clzz = loader.parseClass("activator"); 
-				obj = (GroovyObject) clzz.newInstance();
-				obj.invokeMethod("setUtil", new GroovyScriptUtil(config,loader));// 注入脚本加载工具
+				Class clzz =  loader.parseClass(activatorFile);
+
+                ClassReader classReader = new ClassReader(clzz.getName() );
+
+                ClassWriter classWriter = new ClassWriter(true);
+
+                ClassAdapter adapter = new MyClassAdapter2(classWriter);
+                classReader.accept(adapter, true);
+
+                byte[] buf = classWriter.toByteArray();
+
+                GeneratorClassLoader  classLoader = new GeneratorClassLoader ();
+                Class clazz = classLoader.defineClassFromClassFile(clzz.getName(), buf);
+
+                obj = clazz.newInstance();
+
+                Field feild = clazz.getDeclaredField("util");
+                feild.setAccessible(true);
+
+                feild.set(obj, new GroovyScriptUtil(config,loader));
+
+
+//				obj.invokeMethod("setUtil", new GroovyScriptUtil(config,loader));// 注入脚本加载工具
 			} catch (Exception e) {
 			    logger.error("",e);
 				throw new GroovyActivatorLoadException();
@@ -142,4 +246,32 @@ public class ModuleContext {
 		return this.modules.get(uuid);
 	}
 	
+}
+
+
+class MyClassAdapter2 extends ClassAdapter {
+
+    public MyClassAdapter2(ClassVisitor cv) {
+        super(cv);
+    }
+    @Override
+    public void visitEnd() {
+        cv.visitField(Opcodes.ACC_PUBLIC, "util", Type.getDescriptor(GroovyScriptUtil.class), null, null);
+    }
+
+/*
+ * 调用此方法会重复添加age属性，会报错
+ * 具体原因参看：http://victorzhzh.iteye.com/blog/882699
+ * @Override
+    public FieldVisitor visitField(int access, String name, String desc,
+            String signature, Object value) {
+        cv.visitField(Opcodes.ACC_PUBLIC, "age", Type.getDescriptor(int.class), null, null);
+        return super.visitField(access, name, desc, signature, value);
+    }*/
+}
+class GeneratorClassLoader extends ClassLoader {
+    @SuppressWarnings("rawtypes")
+    public Class defineClassFromClassFile(String className, byte[] classFile)throws Exception{
+        return defineClass(className, classFile, 0, classFile.length);
+    }
 }

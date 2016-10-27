@@ -6,7 +6,9 @@ import com.wuweibi.module4j.module.ModuleContext;
 
 
 /**
- * 模块启动器
+ * 模块接口
+ *
+ *
  * @author marker
  * @version 1.0
  */

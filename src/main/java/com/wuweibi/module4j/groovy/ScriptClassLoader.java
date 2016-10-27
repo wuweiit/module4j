@@ -17,7 +17,7 @@ public class ScriptClassLoader {
 		this.src = src;
 		 ClassLoader parent = ScriptClassLoader.class.getClassLoader(); 
 		 loader = new GroovyClassLoader(parent);
-		 loader.addClasspath(src); 
+		 loader.addClasspath(src);
 	}
 	
 	
@@ -32,7 +32,7 @@ public class ScriptClassLoader {
 	public Class<?> parseClass(String scriptName) throws CompilationFailedException, IOException, ClassNotFoundException{
 		File filePath = new File(src + File.separator + scriptName + ".groovy");
 		String text = FileTools.getFileContet(filePath, FileTools.FILE_CHARACTER_UTF8);
-		return loader.parseClass(text); 
+		return loader.parseClass(text);
 	}
 	
 	
