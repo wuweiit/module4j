@@ -139,9 +139,9 @@ public class ModuleContext {
 
             String activatorFile = configuration.getActivatorFile().replaceFirst(".groovy","");
 			
-			String src = moduleFile.getAbsolutePath() + File.separator;
+			String modulePath = moduleFile.getAbsolutePath() + File.separator;
 			 
-			ScriptClassLoader loader = new ScriptClassLoader(src);
+			ScriptClassLoader loader = new ScriptClassLoader(modulePath);
 			
 			Object obj;
 			try {
@@ -155,27 +155,39 @@ public class ModuleContext {
                 ClassPool cpool = ClassPool.getDefault();
                 CtClass className = cpool.get(clzz.getName());
 
-                // 添加字段
+                // 添加字段 GroovyUtil工具
                 CtField field = new CtField(cpool.get(GroovyScriptUtil.class.getName()), "util", className);
                 field.setModifiers(Modifier.PUBLIC);
                 className.addField(field);
 
+                // 添加当前Groovy路径字段
+                CtField field2 = new CtField(cpool.get(String.class.getName()), "path", className);
+                field2.setModifiers(Modifier.PUBLIC);
+                className.addField(field2);
+
+
                 // 添加方法
-                CtMethod method = new CtMethod(cpool.get(Class.class.getName()), "require",
-                        new CtClass[] {cpool.get(String.class.getName())} , className);
+                CtMethod method = new CtMethod(
+                        cpool.get(Class.class.getName()),
+                        "require",
+                        new CtClass[] {cpool.get(String.class.getName())} ,
+                        className);
                 method.setModifiers(Modifier.PUBLIC);
                 method.setBody("{ return util.loadGroovy($1);}");
                 className.addMethod(method);
 
 
                 Class clazz =  className.toClass();
-
                 obj = clazz.newInstance();
+
 
                 Field feild = clazz.getDeclaredField("util");
                 feild.setAccessible(true);
                 feild.set(obj, new GroovyScriptUtil(config,loader));
 
+                feild = clazz.getDeclaredField("path");
+                feild.setAccessible(true);
+                feild.set(obj, modulePath);
 
 //				obj.invokeMethod("setUtil", new GroovyScriptUtil(config,loader));// 注入脚本加载工具
 			} catch (Exception e) {

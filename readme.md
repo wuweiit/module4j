@@ -6,6 +6,11 @@ OSGI相信大家比较熟悉，早有耳闻。但是OSGI是一个复杂的工程
 是面对动态更新的时候，Java本身不像PHP那样的灵活动态性。
 
 
+### 更新日志
+
+2016-11-02 使用字节码技术在主要脚本中可以使用require(String)函数加载其他groovy中的类。
+
+
 ### 实现思路
 
 Java是编译语言，但在一些技术大牛的努力之下实现了与Java无缝集成的脚本语言，例如：Scala、Groovy。并且这些脚本语言应用非常广。Groovy被应用于Gradle构建工具，还衍生出Grails(groovy on rails) 框架，Scala也是被应用于大数据处理框架Spark等项目。

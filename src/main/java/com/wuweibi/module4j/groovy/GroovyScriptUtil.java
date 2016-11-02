@@ -8,23 +8,50 @@ import java.io.IOException;
 import java.util.Map;
 
 
+/**
+ * Groovy 脚本工具
+ * @author marker
+ */
 public class GroovyScriptUtil {
-	
+
+	/**
+	 * 模块配置信息
+	 */
 	private Map<String,Object> moduleConfig;
-	
+	/**
+	 *  脚本类加载器
+	 */
 	private ScriptClassLoader loader;
-	
-	
-	
+
+
+	/**
+	 * 构造
+	 * @param config
+	 * @param loader
+	 */
 	public GroovyScriptUtil(Map<String,Object> config, ScriptClassLoader loader) { 
 		this.moduleConfig = config;
 		this.loader = loader;
 	}
-	
 
 
+	/**
+	 * 加载脚本类
+	 * @param groovyFile
+	 * @return
+	 * @throws CompilationFailedException
+	 * @throws IOException
+	 * @throws ClassNotFoundException
+	 */
 	public Class<?> loadGroovy(String groovyFile) throws CompilationFailedException, IOException, ClassNotFoundException{  
-		Class<?> groovyClass = loader.parseClass(groovyFile); 
+		Class<?> groovyClass = loader.parseClass(groovyFile);
+
+		// 注入require
+
+
+
+
+
 		return groovyClass;  
 	}
 	
