@@ -40,5 +40,12 @@
             <artifactId>groovy</artifactId>
             <version>1.5.7</version>
         </dependency>
+        <!-- https://mvnrepository.com/artifact/org.javassist/javassist -->
+        <dependency>
+            <groupId>org.javassist</groupId>
+            <artifactId>javassist</artifactId>
+            <version>3.20.0-GA</version>
+        </dependency>
+
     </dependencies>
 </project>

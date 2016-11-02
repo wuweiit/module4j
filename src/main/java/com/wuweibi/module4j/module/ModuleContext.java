@@ -13,6 +13,7 @@ import com.wuweibi.module4j.groovy.ScriptClassLoader;
 import com.wuweibi.utils.FileTools;
 import groovy.lang.GroovyObject;
 import groovy.util.GroovyScriptEngine;
+import javassist.*;
 import org.codehaus.groovy.tools.GroovyClass;
 import org.objectweb.asm.*;
 import org.slf4j.Logger;
@@ -151,23 +152,28 @@ public class ModuleContext {
 				logger.info("start load groovy script...");
 				Class clzz =  loader.parseClass(activatorFile);
 
-                ClassReader classReader = new ClassReader(clzz.getName() );
+                ClassPool cpool = ClassPool.getDefault();
+                CtClass className = cpool.get(clzz.getName());
 
-                ClassWriter classWriter = new ClassWriter(true);
+                // 添加字段
+                CtField field = new CtField(cpool.get(GroovyScriptUtil.class.getName()), "util", className);
+                field.setModifiers(Modifier.PUBLIC);
+                className.addField(field);
 
-                ClassAdapter adapter = new MyClassAdapter2(classWriter);
-                classReader.accept(adapter, true);
+                // 添加方法
+                CtMethod method = new CtMethod(cpool.get(Class.class.getName()), "require",
+                        new CtClass[] {cpool.get(String.class.getName())} , className);
+                method.setModifiers(Modifier.PUBLIC);
+                method.setBody("{ return util.loadGroovy($1);}");
+                className.addMethod(method);
 
-                byte[] buf = classWriter.toByteArray();
 
-                GeneratorClassLoader  classLoader = new GeneratorClassLoader ();
-                Class clazz = classLoader.defineClassFromClassFile(clzz.getName(), buf);
+                Class clazz =  className.toClass();
 
                 obj = clazz.newInstance();
 
                 Field feild = clazz.getDeclaredField("util");
                 feild.setAccessible(true);
-
                 feild.set(obj, new GroovyScriptUtil(config,loader));
 
 
@@ -189,8 +195,8 @@ public class ModuleContext {
 			
 			modules.put(moduleFile.getName(), module);
 			return module;  
-		} 
-		return null; 
+		}
+		return null;
 	}
 	
 	
@@ -246,32 +252,4 @@ public class ModuleContext {
 		return this.modules.get(uuid);
 	}
 	
-}
-
-
-class MyClassAdapter2 extends ClassAdapter {
-
-    public MyClassAdapter2(ClassVisitor cv) {
-        super(cv);
-    }
-    @Override
-    public void visitEnd() {
-        cv.visitField(Opcodes.ACC_PUBLIC, "util", Type.getDescriptor(GroovyScriptUtil.class), null, null);
-    }
-
-/*
- * 调用此方法会重复添加age属性，会报错
- * 具体原因参看：http://victorzhzh.iteye.com/blog/882699
- * @Override
-    public FieldVisitor visitField(int access, String name, String desc,
-            String signature, Object value) {
-        cv.visitField(Opcodes.ACC_PUBLIC, "age", Type.getDescriptor(int.class), null, null);
-        return super.visitField(access, name, desc, signature, value);
-    }*/
-}
-class GeneratorClassLoader extends ClassLoader {
-    @SuppressWarnings("rawtypes")
-    public Class defineClassFromClassFile(String className, byte[] classFile)throws Exception{
-        return defineClass(className, classFile, 0, classFile.length);
-    }
 }
