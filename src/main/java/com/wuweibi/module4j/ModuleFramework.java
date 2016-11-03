@@ -71,7 +71,7 @@ public class ModuleFramework {
         }
 
 
-        // 扫描模块
+        // 扫描自动部署模块
         File file = new File(modulesDir);
         logger.info("start scan [{}] modules... ",modulesDir);
         for(File f : file.listFiles()){

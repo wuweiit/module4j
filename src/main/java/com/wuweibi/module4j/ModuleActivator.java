@@ -6,7 +6,8 @@ import com.wuweibi.module4j.module.ModuleContext;
 
 
 /**
- * 模块接口
+ * 激活器 模块接口
+ * 用于激活一个模块和停止一个模块功能。
  *
  *
  * @author marker

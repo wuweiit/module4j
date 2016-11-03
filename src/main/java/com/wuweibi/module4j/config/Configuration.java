@@ -4,7 +4,9 @@ import java.util.Map;
 
 /**
  * 配置对象
+ * 用于全局的配置，定义模块路径相关信息。
  *
+ * @author marker
  *
  * Created by ROOT on 2016/10/27.
  */
@@ -41,6 +43,11 @@ public class Configuration {
         return config.getOrDefault(DIR_MODULES,"./modules");
     }
 
+
+    /**
+     * 获取 激活器类 脚本 文件类型
+     * @return
+     */
     public String getActivatorFile() {
         return config.getOrDefault(CONFIG_ACTIVATOR,"./src/activator.groovy");
     }
