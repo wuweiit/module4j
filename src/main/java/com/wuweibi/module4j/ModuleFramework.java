@@ -27,8 +27,8 @@ import java.util.Set;
 public class ModuleFramework {
 	
 	private final Logger logger = LoggerFactory.getLogger(ModuleFramework.class);
-	
 
+    public static  final String MODULE_CONTEXT = "__MODULE_CONTEXT";
 
 
     private Map<String, String> config;
