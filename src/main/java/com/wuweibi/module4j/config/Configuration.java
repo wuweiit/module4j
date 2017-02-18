@@ -40,7 +40,11 @@ public class Configuration {
      * @return
      */
     public String getModulesDeployDir(){
-        return config.getOrDefault(DIR_MODULES,"./modules");
+        String path = config.get(DIR_MODULES);
+        if(null == path){
+            return "./modules";
+        }
+        return path;
     }
 
 
@@ -49,6 +53,10 @@ public class Configuration {
      * @return
      */
     public String getActivatorFile() {
-        return config.getOrDefault(CONFIG_ACTIVATOR,"./src/activator.groovy");
+        String path = config.get(CONFIG_ACTIVATOR);
+        if(null == path){
+            return "./src/activator.groovy";
+        }
+        return path;
     }
 }

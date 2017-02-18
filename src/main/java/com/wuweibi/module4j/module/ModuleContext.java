@@ -11,9 +11,11 @@ import com.wuweibi.module4j.exception.StopModuleActivatorException;
 import com.wuweibi.module4j.groovy.GroovyScriptUtil;
 import com.wuweibi.module4j.groovy.ScriptClassLoader;
 import com.wuweibi.utils.FileTools;
+import groovy.lang.GroovyClassLoader;
 import groovy.lang.GroovyObject;
 import groovy.util.GroovyScriptEngine;
 import javassist.*;
+import javassist.scopedpool.ScopedClassPool;
 import org.codehaus.groovy.tools.GroovyClass;
 import org.objectweb.asm.*;
 import org.slf4j.Logger;
@@ -142,7 +144,8 @@ public class ModuleContext {
 			String modulePath = moduleFile.getAbsolutePath() + File.separator;
 			 
 			ScriptClassLoader loader = new ScriptClassLoader(modulePath);
-			
+
+
 			Object obj;
 			try {
 
@@ -151,8 +154,8 @@ public class ModuleContext {
 
 				logger.info("start load groovy script...");
 				Class clzz =  loader.parseClass(activatorFile);
-
                 ClassPool cpool = ClassPool.getDefault();
+		        cpool.appendClassPath("D:\\works\\IDEA15\\module4j\\modules\\5ff93bba7d1f4635bb63624e59c670a0\\src");
                 CtClass className = cpool.get(clzz.getName());
 
                 // 添加字段 GroovyUtil工具
