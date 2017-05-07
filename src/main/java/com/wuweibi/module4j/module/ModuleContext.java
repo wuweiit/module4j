@@ -152,11 +152,14 @@ public class ModuleContext {
 				logger.info("start groovy engine...");
 //				GroovyScriptEngine gse = new GroovyScriptEngine(src, this.getClass().getClassLoader());
 
-				logger.info("start load groovy script...");
+				logger.info("start load groovy[{}] script...",activatorFile);
 				Class clzz =  loader.parseClass(activatorFile);
-                ClassPool cpool = ClassPool.getDefault();
-		        cpool.appendClassPath("D:\\works\\IDEA15\\module4j\\modules\\5ff93bba7d1f4635bb63624e59c670a0\\src");
+				System.out.println(clzz.getName());
+				ClassPool cpool = ClassPool.getDefault();
+//		        cpool.appendClassPath("D:\\works\\IDEA15\\module4j\\modules\\5ff93bba7d1f4635bb63624e59c670a0\\src");
+//		        cpool.appendClassPath(modulePath + "src");
                 CtClass className = cpool.get(clzz.getName());
+
 
                 // 添加字段 GroovyUtil工具
                 CtField field = new CtField(cpool.get(GroovyScriptUtil.class.getName()), "util", className);

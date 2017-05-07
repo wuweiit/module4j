@@ -15,7 +15,7 @@ public class ScriptClassLoader {
 	
 	public ScriptClassLoader(String src) {
 		this.src = src;
-		 ClassLoader parent = ScriptClassLoader.class.getClassLoader(); 
+		 ClassLoader parent = ScriptClassLoader.class.getClassLoader();
 		 loader = new GroovyClassLoader(parent);
 		 loader.addClasspath(src);
 	}
