@@ -2,6 +2,7 @@ package com.wuweibi.module4j.groovy;
 
 import com.wuweibi.utils.FileTools;
 import groovy.lang.GroovyClassLoader;
+import javassist.ClassPool;
 import org.codehaus.groovy.control.CompilationFailedException;
 
 import java.io.File;
@@ -19,8 +20,16 @@ public class ScriptClassLoader {
 		 loader = new GroovyClassLoader(parent);
 		 loader.addClasspath(src);
 	}
-	
-	
+
+	public ScriptClassLoader(ClassPool cpool, String src) {
+		this.src = src;
+		ClassLoader parent = cpool.getClassLoader();
+		loader = new GroovyClassLoader(parent);
+		loader.addClasspath(src);
+
+	}
+
+
 	/**
 	 * Groovy脚本转换Class
 	 * @param scriptName

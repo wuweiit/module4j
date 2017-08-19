@@ -19,7 +19,7 @@ public class ModuleFrameworkTest {
 
     public static void main(String[] args){
 
-        String moduleDir =  "/Volumes/DATA/works/idea15/module4j/modules";// 模块目录
+        String moduleDir =  "/WORK/git/module4j/modules";// 模块目录
 
         // 缓存目录
         String cacheDir = moduleDir + File.separator + "cache";// 模块目录

@@ -18,16 +18,16 @@ public interface ModuleActivator {
  
 	/**
 	 * 启用
-	 * @param context
-	 * @throws Exception
+	 * @param context 上下文
+	 * @throws StartModuleActivatorException
 	 */
-	public void start(ModuleContext context) throws StartModuleActivatorException;
+	void start(ModuleContext context);
 	
 	
 	/**
 	 * 停止
-	 * @param context
+	 * @param context 上下文
 	 * @throws Exception
 	 */
-	public void stop(ModuleContext context) throws StopModuleActivatorException;
+	void stop(ModuleContext context);
 }
