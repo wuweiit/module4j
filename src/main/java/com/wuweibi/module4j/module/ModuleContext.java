@@ -2,6 +2,7 @@ package com.wuweibi.module4j.module;
 
 
 import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONObject;
 import com.wuweibi.module4j.ModuleActivator;
 import com.wuweibi.module4j.ModuleFramework;
 import com.wuweibi.module4j.SupperModule;
@@ -11,6 +12,7 @@ import com.wuweibi.module4j.exception.PackageJsonNotFoundException;
 import com.wuweibi.module4j.exception.StopModuleActivatorException;
 import com.wuweibi.module4j.groovy.GroovyScriptUtil;
 import com.wuweibi.module4j.groovy.ScriptClassLoader;
+import com.wuweibi.module4j.listener.InstallListenter;
 import com.wuweibi.utils.FileTools;
 import groovy.lang.GroovyClassLoader;
 import groovy.lang.GroovyObject;
@@ -32,10 +34,7 @@ import java.beans.MethodDescriptor;
 import java.io.*;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 
@@ -60,6 +59,9 @@ public class ModuleContext {
 
     /**  */
     private Configuration configuration;
+
+    /** 安装监听器 */
+    private List<InstallListenter> listenters = new ArrayList<>(3);
 
 
     /**
@@ -111,11 +113,12 @@ public class ModuleContext {
         try {
             json = FileTools.getFileContet(new File(packageJson), FileTools.FILE_CHARACTER_UTF8);
         } catch (IOException e) {
-            throw new PackageJsonNotFoundException();
+            logger.error("{}", e);
+            return null;
         }
 
-        @SuppressWarnings("unchecked")
-        Map<String, Object> config = (Map<String, Object>) JSON.parse(json);
+        /** 配置信息 */
+        JSONObject config = JSON.parseObject(json);
 
 
         // 判断上级路径是否是模块目录
@@ -179,7 +182,7 @@ public class ModuleContext {
 //		        cpool.appendClassPath("/WORK/git/module4j/modules/5ff93bba7d1f4635bb63624e59c670a0/src");
 //		        cpool.appendClassPath(modulePath + "src");
 
-                CtClass ctClass = cpool.makeClass(clzz.getName());
+//                CtClass ctClass = cpool.makeClass(clzz.getName());
 
 
 
@@ -219,7 +222,7 @@ public class ModuleContext {
 //                method.setBody("{ return util.loadGroovy($1);}");
 //                className.addMethod(method);
 
-             obj = (SupperModule) clzz.newInstance();
+                obj = (SupperModule) clzz.newInstance();
 
 
                 obj.setUtil(new GroovyScriptUtil(config, loader));
@@ -250,6 +253,11 @@ public class ModuleContext {
 
 
             modules.put(moduleFile.getName(), module);
+            Iterator<InstallListenter> it = listenters.iterator();
+            while (it.hasNext()) {
+                InstallListenter lis = it.next();
+                lis.install(module);
+            }
             return module;
         }
         return null;
@@ -274,9 +282,17 @@ public class ModuleContext {
                 String moduleDir = "modules" + File.separator + uuid;
 
                 FileTools.deleteDirectory(new File(moduleDir));
+                Iterator<InstallListenter> it = listenters.iterator();
+                while (it.hasNext()) {
+                    InstallListenter lis = it.next();
+                    lis.uninstall(m);
+                }
+
+
             } catch (StopModuleActivatorException e) {
                 e.printStackTrace();
             }
+
         }
 
 
@@ -316,4 +332,12 @@ public class ModuleContext {
         return this.modules.get(uuid);
     }
 
+
+    /**
+     * 添加安装监听器
+     * @param listener 监听器
+     */
+    public void addInstallListener(InstallListenter listener){
+        this.listenters.add(listener);
+    }
 }

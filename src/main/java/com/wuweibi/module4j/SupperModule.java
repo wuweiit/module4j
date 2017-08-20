@@ -3,8 +3,9 @@ package com.wuweibi.module4j;/**
  */
 
 import com.wuweibi.module4j.groovy.GroovyScriptUtil;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
 
 /**
  * @author marker
@@ -12,9 +13,13 @@ import java.io.IOException;
  **/
 public abstract class SupperModule  implements ModuleActivator {
 
+    /**  */
+    private final Logger logger = LoggerFactory.getLogger(ModuleUtils.class);
 
+    /**  */
     private GroovyScriptUtil util;
 
+    /**  */
     private String path;
 
 
@@ -24,7 +29,7 @@ public abstract class SupperModule  implements ModuleActivator {
      * @return
      */
     public Class require(String path) throws Exception {
-        return util.loadGroovy(path);
+        return util.loadGroovy("/src/" + path);
     }
 
 
@@ -43,4 +48,6 @@ public abstract class SupperModule  implements ModuleActivator {
     public void setPath(String path) {
         this.path = path;
     }
+
+
 }

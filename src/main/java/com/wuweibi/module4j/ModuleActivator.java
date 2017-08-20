@@ -1,7 +1,7 @@
 package com.wuweibi.module4j;
 
 import com.wuweibi.module4j.exception.StartModuleActivatorException;
-import com.wuweibi.module4j.exception.StopModuleActivatorException;
+import com.wuweibi.module4j.module.Module;
 import com.wuweibi.module4j.module.ModuleContext;
 
 
@@ -19,9 +19,10 @@ public interface ModuleActivator {
 	/**
 	 * 启用
 	 * @param context 上下文
-	 * @throws StartModuleActivatorException
+	 * @param module 模块信息
+     * @throws StartModuleActivatorException
 	 */
-	void start(ModuleContext context);
+	void start(ModuleContext context, Module module);
 	
 	
 	/**

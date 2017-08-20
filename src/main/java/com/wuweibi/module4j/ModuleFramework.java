@@ -66,22 +66,24 @@ public class ModuleFramework {
         String modulesDir =  configuration.getModulesDeployDir() ;
 //		String modulesCache = config.get(DIR_CACHE);
 
-        if(null == modulesDir){
+        if (null == modulesDir){
             throw new Exception("配置信息缺失：" + configuration.getModulesDeployDir());
         }
 
 
         // 扫描自动部署模块
         File file = new File(modulesDir);
-        logger.info("start scan [{}] modules... ",modulesDir);
-        for(File f : file.listFiles()){
-            String uuid = f.getName();//
+        logger.info("start scan [{}] modules... ", modulesDir);
+        for (File f : file.listFiles()){
+            String uuid = f.getName(); //
             logger.info("loading {} ", uuid);
             File moduleFile = new File(modulesDir + File.separator + uuid);
             try {
                 Module module = context.install(moduleFile);
-                module.start();// 启动模块
-            }catch(PackageJsonNotFoundException e){
+                if (module != null){
+                    module.start(); // 启动模块
+                }
+            } catch (PackageJsonNotFoundException e){
                 logger.error("module package.json file not found!", e);
             } catch (GroovyActivatorLoadException e) {
                 logger.error("load module [ "+moduleFile.getName()+" ] Activator faild!",e);

@@ -1,6 +1,7 @@
 package com.wuweibi.module4j.module;
 
 
+import com.alibaba.fastjson.JSONObject;
 import com.wuweibi.module4j.ModuleActivator;
 import com.wuweibi.module4j.exception.StartModuleActivatorException;
 import com.wuweibi.module4j.exception.StopModuleActivatorException;
@@ -35,15 +36,19 @@ public class Module implements Serializable {
 	public static final int STATUS_ERROR = 3;
 
 
-	
-	 
 
+
+
+    /**  */
 	private ModuleActivator activator;
-	
-	private Map<String,Object> config;
-	
+
+	/**  */
+	private JSONObject config;
+
+    /**  */
 	private ModuleContext context;
-	
+
+    /**  */
 	private int status = STATUS_READY;
 	
 	public Module(ModuleContext context){
@@ -53,7 +58,7 @@ public class Module implements Serializable {
 	
 	
 	
-	public Module(ModuleActivator activator, Map<String, Object> config,
+	public Module(ModuleActivator activator, JSONObject config,
 			ModuleContext context) {
 		super();
 		this.activator = activator;
@@ -62,19 +67,26 @@ public class Module implements Serializable {
 	}
 
 
-
-
+	/**
+	 * 启动
+	 * @throws StartModuleActivatorException yidsa
+	 */
 	public void start() throws StartModuleActivatorException {
 		synchronized (Module.class) { 
-			if(status == STATUS_READY || status == STATUS_STOP){
-				activator.start(context);	
+			if (status == STATUS_READY || status == STATUS_STOP) {
+
+				activator.start(context, this);
 				status = STATUS_RUNING;
 				config.put("status", status);
 			}
 		}
 	}
-	
-	
+
+
+    /**
+     *
+     * @throws StopModuleActivatorException
+     */
 	public void stop() throws StopModuleActivatorException {
 		synchronized (Module.class) { 
 			if(status == STATUS_RUNING){
@@ -86,9 +98,11 @@ public class Module implements Serializable {
 	}
 
 
-
-
-	public Map<String, Object> getConfig() {
+    /**
+     *
+     * @return
+     */
+	public JSONObject getConfig() {
 		config.put(Module.CONFIG_STATUS, this.status); 
 		return config;
 	}
@@ -101,5 +115,13 @@ public class Module implements Serializable {
 	public int getStatus() {
 		return status;
 	}
-	
+
+
+    /**
+     * 获取模块唯一标记
+     * @return
+     */
+	public String getId() {
+	    return this.config.getString("id");
+    }
 }
