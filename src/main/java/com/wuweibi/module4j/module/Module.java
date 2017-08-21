@@ -12,116 +12,158 @@ import java.util.Map;
 
 /**
  * 模块对象
+ *
  * @author marker
  * @version 1.0
  */
 public class Module implements Serializable {
-	private static final long serialVersionUID = 2740932792002272914L;
-
-	
-	public static final String CONFIG_UUID = "uuid";
-	public static final String CONFIG_STATUS = "status";
-	
-	
-	/** 准备状态 */
-	public static final int STATUS_READY = 0;
-	
-	/** 运行状态 */
-	public static final int STATUS_RUNING = 1;
-	
-	/** 停止状态 */
-	public static final int STATUS_STOP = 2;
-	
-	/** 错误状态 */
-	public static final int STATUS_ERROR = 3;
+    private static final long serialVersionUID = 2740932792002272914L;
 
 
+    /** ID */
+    public static final String CONFIG_ID = "id";
 
+    /** 状态 */
+    public static final String CONFIG_STATUS = "status";
+
+    /** 目录 */
+    public static final String CONFIG_DIRECTORY = "directory";
+
+
+    /**
+     * 准备状态
+     */
+    public static final int STATUS_READY = 0;
+
+    /**
+     * 运行状态
+     */
+    public static final int STATUS_RUNING = 1;
+
+    /**
+     * 停止状态
+     */
+    public static final int STATUS_STOP = 2;
+
+    /**
+     * 错误状态
+     */
+    public static final int STATUS_ERROR = 3;
 
 
     /**  */
-	private ModuleActivator activator;
+    private ModuleActivator activator;
 
-	/**  */
-	private JSONObject config;
+    /** 配置信息  */
+    private JSONObject config;
 
-    /**  */
-	private ModuleContext context;
+    /** 上下文对象 */
+    private ModuleContext context;
 
-    /**  */
-	private int status = STATUS_READY;
-	
-	public Module(ModuleContext context){
-		this.context = context;
-	}
-	
-	
-	
-	
-	public Module(ModuleActivator activator, JSONObject config,
-			ModuleContext context) {
-		super();
-		this.activator = activator;
-		this.config = config;
-		this.context = context;
-	}
+    /** 状态 */
+    private int status = STATUS_READY;
 
 
-	/**
-	 * 启动
-	 * @throws StartModuleActivatorException yidsa
-	 */
-	public void start() throws StartModuleActivatorException {
-		synchronized (Module.class) { 
-			if (status == STATUS_READY || status == STATUS_STOP) {
 
-				activator.start(context, this);
-				status = STATUS_RUNING;
-				config.put("status", status);
-			}
-		}
-	}
+    /**
+     * 构造
+     * @param context
+     */
+    public Module(ModuleContext context) {
+        this.context = context;
+    }
+
+
+    /**
+     * 构造2
+     * @param activator
+     * @param config
+     * @param context
+     */
+    public Module(ModuleActivator activator, JSONObject config,
+                  ModuleContext context) {
+        super();
+        this.activator = activator;
+        this.config = config;
+        this.context = context;
+    }
+
+
+    /**
+     * 启用
+     *
+     * @throws StartModuleActivatorException 异常
+     */
+    public void start() throws StartModuleActivatorException {
+        synchronized (Module.class) {
+            if (status == STATUS_READY || status == STATUS_STOP) {
+                context.moduleThreadLocal.set(this); // 绑定当前模块
+                activator.start(context);
+                status = STATUS_RUNING;
+                config.put("status", status);
+            }
+        }
+    }
+
+
+    /**
+     * 停用
+     *
+     * @throws StopModuleActivatorException 异常
+     */
+    public void stop() throws StopModuleActivatorException {
+        synchronized (Module.class) {
+            if (status == STATUS_RUNING) {
+                context.moduleThreadLocal.set(this); // 绑定当前模块
+                activator.stop(context);
+                status = STATUS_STOP;
+                config.put("status", status);
+            }
+        }
+    }
+
 
 
     /**
      *
-     * @throws StopModuleActivatorException
+     * 获取配置信息
+     *
+     * @return JSONObject
      */
-	public void stop() throws StopModuleActivatorException {
-		synchronized (Module.class) { 
-			if(status == STATUS_RUNING){
-				activator.stop(context);	
-				status = STATUS_STOP;
-				config.put("status", status);
-			}
-		} 
-	}
+    public JSONObject getConfig() {
+        config.put(Module.CONFIG_STATUS, this.status);
+        return config;
+    }
+
 
 
     /**
+     * 获取模块状态
      *
-     * @return
+     * @return int
      */
-	public JSONObject getConfig() {
-		config.put(Module.CONFIG_STATUS, this.status); 
-		return config;
-	}
-	
-	
-	/**
-	 * 获取模块状态
-	 * @return
-	 */
-	public int getStatus() {
-		return status;
-	}
+    public int getStatus() {
+        return status;
+    }
+
 
 
     /**
      * 获取模块唯一标记
+     *
      * @return
      */
-	public String getId() {
-	    return this.config.getString("id");
+    public String getId() {
+        return this.config.getString(CONFIG_ID);
+    }
+
+
+    /**
+     * 获取模板的目录名称
+     *
+     * @return
+     */
+    public String getDirectory() {
+        return config.getString(CONFIG_DIRECTORY);
     }
 }

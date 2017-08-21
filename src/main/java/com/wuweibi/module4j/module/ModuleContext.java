@@ -4,36 +4,19 @@ package com.wuweibi.module4j.module;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import com.wuweibi.module4j.ModuleActivator;
-import com.wuweibi.module4j.ModuleFramework;
 import com.wuweibi.module4j.SupperModule;
 import com.wuweibi.module4j.config.Configuration;
-import com.wuweibi.module4j.exception.GroovyActivatorLoadException;
-import com.wuweibi.module4j.exception.PackageJsonNotFoundException;
-import com.wuweibi.module4j.exception.StopModuleActivatorException;
+import com.wuweibi.module4j.exception.*;
 import com.wuweibi.module4j.groovy.GroovyScriptUtil;
 import com.wuweibi.module4j.groovy.ScriptClassLoader;
 import com.wuweibi.module4j.listener.InstallListenter;
 import com.wuweibi.utils.FileTools;
-import groovy.lang.GroovyClassLoader;
-import groovy.lang.GroovyObject;
-import groovy.util.GroovyScriptEngine;
 import javassist.*;
-import javassist.bytecode.ClassFile;
-import javassist.compiler.Javac;
-import javassist.compiler.ast.Expr;
-import javassist.compiler.ast.MethodDecl;
-import javassist.convert.Transformer;
-import javassist.runtime.DotClass;
-import javassist.scopedpool.ScopedClassPool;
-import org.codehaus.groovy.tools.GroovyClass;
-import org.objectweb.asm.*;
+import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.beans.MethodDescriptor;
 import java.io.*;
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -50,8 +33,13 @@ public class ModuleContext {
      */
     private final Logger logger = LoggerFactory.getLogger(ModuleContext.class);
 
+    /** 文本文件UTF-8编码 */
+    public static final String CHARACTER = "UTF-8";
+
+
+
     /** 线程安全集合 */
-    private Map<String, Module> modules = new ConcurrentHashMap<String, Module>();
+    private Map<String, Module> modules = new ConcurrentHashMap<>();
 
 
     /**  */
@@ -63,6 +51,9 @@ public class ModuleContext {
     /** 安装监听器 */
     private List<InstallListenter> listenters = new ArrayList<>(3);
 
+
+    /** 绑定当前的模块 */
+    public static final ThreadLocal<Module> moduleThreadLocal = new ThreadLocal<>();
 
     /**
      * 构造
@@ -84,26 +75,34 @@ public class ModuleContext {
      * @throws PackageJsonNotFoundException
      * @throws GroovyActivatorLoadException
      */
-    public Module install(String moduleFilePath) throws PackageJsonNotFoundException, GroovyActivatorLoadException {
+    public Module install(String moduleFilePath) {
         File moduleFile = new File(moduleFilePath);
         if (!moduleFile.exists()) {
             logger.warn("modulefilepath[{}] not exists!", moduleFilePath);
             return null;
         }
-        return install(moduleFile);
+        try {
+            return install(moduleFile);
+        } catch (Exception e) {
+            logger.error("", e);
+            return null;
+        }
     }
 
     /**
      * 安装模块
      *
-     * @param moduleFile
-     * @return
-     * @throws PackageJsonNotFoundException
-     * @throws GroovyActivatorLoadException
+     * @param moduleFile 模块文件
+     *
+     * @return Module
+     *
+     * @throws IOException 异常
      */
-    public Module install(File moduleFile) throws GroovyActivatorLoadException, PackageJsonNotFoundException {
+    public Module install(File moduleFile) throws IOException {
         // 校验模块完整性
-
+        if (!moduleFile.isDirectory()) {
+            throw new ModuleErrorException();
+        }
 
         // 读取 packageJson
         String packageJson = moduleFile.getAbsolutePath() + File.separator + "package.json";
@@ -111,30 +110,33 @@ public class ModuleContext {
 
         String json = "{\"error\":\"invalid config info\"}";
         try {
-            json = FileTools.getFileContet(new File(packageJson), FileTools.FILE_CHARACTER_UTF8);
+            File filePackageJson = new File(packageJson);
+            json = FileUtils.readFileToString(filePackageJson, CHARACTER);
         } catch (IOException e) {
-            logger.error("{}", e);
-            return null;
+            throw new PackageJsonNotFoundException();
         }
 
-        /** 配置信息 */
         JSONObject config = JSON.parseObject(json);
+        if (config.containsKey("error")){
+            throw new PackageJsonErrorException();
+        }
 
 
         // 判断上级路径是否是模块目录
-        File parentFile = moduleFile.getParentFile();
+        File parentFile  = moduleFile.getParentFile();
+        File modulesFile = new File(configuration.getAutoDeployDir());
 
-        File modulesFile = new File(configuration.getModulesDeployDir());
-        String a = modulesFile.getAbsolutePath();
-        String b = parentFile.getAbsolutePath();
-        if (a.equals(b)) { // 若路径相同
+        // 设置模块的目录名称
+        config.put(Configuration.CONFIG_DIRECTORY, modulesFile.getName());
 
+        if (modulesFile.equals(parentFile)) { // 若路径相同
+            logger.debug("install path is modules path!");
         } else { // 路径不同
+
             // 拷贝文件夹到模块目录
             String moduleId = (String) config.get("id");
 
-            File toFile = new File(modulesFile.getAbsolutePath() + File.separator);
-
+            File toFile = modulesFile;
             try {
                 logger.info("file copy....");
                 FileTools.copyFiles(moduleFile, toFile);
@@ -144,148 +146,88 @@ public class ModuleContext {
                 file2.renameTo(file3);
                 moduleFile = file3;
             } catch (IOException e) {
-                logger.error("", e);
+                throw new ModuleMoveException(e);
             }
-
         }
 
-        if (moduleFile.isDirectory()) {
 
-            String activatorFile = configuration.getActivatorFile().replaceFirst(".groovy", "");
+        // 加载 ActivatorFile
+        String activatorFile = configuration.getActivatorFile().replaceFirst(".groovy", "");
 
-            String modulePath = moduleFile.getAbsolutePath() + File.separator;
-
-
+        String modulePath = moduleFile.getAbsolutePath() + File.separator;
 
 
-            ClassPool cpool = ClassPool.getDefault();
+
+//        ClassPool cpool = ClassPool.getDefault();
 
 
-            ScriptClassLoader loader = new ScriptClassLoader(cpool, modulePath);
+        ScriptClassLoader loader = new ScriptClassLoader(modulePath);
 
 
-            SupperModule obj;
-            try {
+        SupperModule activator;
+        try {
 
-                logger.debug("start groovy engine...");
+            logger.debug("start groovy engine...");
 //				GroovyScriptEngine gse = new GroovyScriptEngine(src, this.getClass().getClassLoader());
 
-                logger.debug("start load groovy[{}] script...", activatorFile);
-                Class clzz = loader.parseClass(activatorFile);
-                logger.debug("{}", clzz.getName());
+            logger.debug("start load groovy[{}] script...", activatorFile);
+            Class clzz = loader.parseClass(activatorFile);
+            logger.debug("{}", clzz.getName());
+
+            activator = (SupperModule) clzz.newInstance();
 
 
+            activator.setUtil(new GroovyScriptUtil(config, loader));
+            activator.setPath(modulePath);
 
-
-
-
-//		        cpool.appendClassPath("/WORK/git/module4j/modules/5ff93bba7d1f4635bb63624e59c670a0/src");
-//		        cpool.appendClassPath(modulePath + "src");
-
-//                CtClass ctClass = cpool.makeClass(clzz.getName());
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-//                CtClass className = cpool.getOrNull(clzz.getName());
-//
-//
-//                // 添加字段 GroovyUtil工具
-//                CtField field = new CtField(cpool.get(GroovyScriptUtil.class.getName()), "util", className);
-//                field.setModifiers(Modifier.PUBLIC);
-//                className.addField(field);
-//
-//                // 添加当前Groovy路径字段
-//                CtField field2 = new CtField(cpool.get(String.class.getName()), "path", className);
-//                field2.setModifiers(Modifier.PUBLIC);
-//                className.addField(field2);
-
-
-                // 添加方法
-//                CtMethod method = new CtMethod(
-//                        cpool.get(Class.class.getName()),
-//                        "require",
-//                        new CtClass[]{cpool.get(String.class.getName())},
-//                        className);
-//                method.setModifiers(Modifier.PUBLIC);
-//                method.setBody("{ return util.loadGroovy($1);}");
-//                className.addMethod(method);
-
-                obj = (SupperModule) clzz.newInstance();
-
-
-                obj.setUtil(new GroovyScriptUtil(config, loader));
-                obj.setPath(modulePath);
-
-
-
-//                Field feild = clazz.getDeclaredField("util");
-//                feild.setAccessible(true);
-//                feild.set(obj, );
-
-//                feild = clazz.getDeclaredField("path");
-//                feild.setAccessible(true);
-//                feild.set(obj, modulePath);
-
-//				obj.invokeMethod("setUtil", new GroovyScriptUtil(config,loader));// 注入脚本加载工具
-            } catch (Exception e) {
-                logger.error("", e);
-                throw new GroovyActivatorLoadException();
-            }
-
-
-            logger.info("build module complete...");
-            ModuleActivator activator = (ModuleActivator) obj;
-            Module module = new Module(activator, config, this);
-
-            // 持久化
-
-
-            modules.put(moduleFile.getName(), module);
-            Iterator<InstallListenter> it = listenters.iterator();
-            while (it.hasNext()) {
-                InstallListenter lis = it.next();
-                lis.install(module);
-            }
-            return module;
+        } catch (Exception e) {
+            throw new GroovyActivatorLoadException(e);
         }
-        return null;
+
+        logger.info("build module complete...");
+
+        Module module = new Module(activator, config, this);
+
+
+
+        // 持久化
+        modules.put(moduleFile.getName(), module);
+
+        // 监听器调用
+        Iterator<InstallListenter> it = listenters.iterator();
+        while (it.hasNext()) {
+            InstallListenter lis = it.next();
+            lis.install(module);
+        }
+        return module;
+
     }
 
 
     /**
      *  卸载
-     * @param uuid UUID
+     * @param id id
      */
-    public void uninstall(String uuid) {
-        if (modules.containsKey(uuid)) {
+    public void uninstall(String id) {
+        if (modules.containsKey(id)) {
             try {
-                Module m = this.modules.get(uuid);
-                if (m.getStatus() == Module.STATUS_RUNING) {
-                    m.stop();
+                Module module = this.modules.get(id);
+                if (module.getStatus() == Module.STATUS_RUNING) {
+                    module.stop();
                 }
-                this.modules.remove(uuid);
+                this.modules.remove(id);
+                String directoryName = module.getDirectory();
+
 
 
                 // 本地文件删除
-                String moduleDir = "modules" + File.separator + uuid;
+                String moduleDir = configuration.getAutoDeployDir() + File.separator + directoryName;
 
                 FileTools.deleteDirectory(new File(moduleDir));
                 Iterator<InstallListenter> it = listenters.iterator();
                 while (it.hasNext()) {
                     InstallListenter lis = it.next();
-                    lis.uninstall(m);
+                    lis.uninstall(module);
                 }
 
 
@@ -323,13 +265,11 @@ public class ModuleContext {
 
 
     /**
-     * 获取模块对象
-     *
-     * @param uuid
+     * 获取当前的模块
      * @return
      */
-    public Module getModule(String uuid) {
-        return this.modules.get(uuid);
+    public Module getModule() {
+        return moduleThreadLocal.get();
     }
 
 

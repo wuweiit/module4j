@@ -8,10 +8,17 @@ import org.codehaus.groovy.control.CompilationFailedException;
 import java.io.File;
 import java.io.IOException;
 
+
+/**
+ *
+ * @author marker
+ */
 public class ScriptClassLoader {
 
-	public GroovyClassLoader loader ;
-	
+	/**  */
+	private GroovyClassLoader loader;
+
+	/**  */
 	private String src;
 	
 	public ScriptClassLoader(String src) {
