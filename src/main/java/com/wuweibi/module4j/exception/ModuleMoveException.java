@@ -17,7 +17,7 @@ public class ModuleMoveException extends IOException {
 
     /**
      * 构造
-     * @param e
+     * @param e 异常
      */
     public ModuleMoveException(IOException e) {
         super(e);

@@ -58,7 +58,7 @@ public class ModuleContext {
     /**
      * 构造
      *
-     * @param config
+     * @param config 配置信息
      */
     public ModuleContext(Map<String, String> config) {
         this.configuration = new Configuration(config);
@@ -71,9 +71,7 @@ public class ModuleContext {
      * 安装模块
      *
      * @param moduleFilePath 模块路径
-     * @return
-     * @throws PackageJsonNotFoundException
-     * @throws GroovyActivatorLoadException
+     * @return Module
      */
     public Module install(String moduleFilePath) {
         File moduleFile = new File(moduleFilePath);
@@ -242,7 +240,7 @@ public class ModuleContext {
 
     /**
      *
-     * @return
+     * @return Map
      */
     public Map<String, Module> getModules() {
         return modules;
@@ -251,7 +249,7 @@ public class ModuleContext {
 
     /**
      *
-     * @return
+     * @return List
      */
     public List<Map<String, Object>> getList() {
         List<Map<String, Object>> list = new ArrayList<Map<String, Object>>();
@@ -266,7 +264,7 @@ public class ModuleContext {
 
     /**
      * 获取当前的模块
-     * @return
+     * @return Module
      */
     public Module getModule() {
         return moduleThreadLocal.get();

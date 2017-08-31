@@ -19,7 +19,6 @@ public interface ModuleActivator {
 	/**
 	 * 启用
 	 * @param context 上下文
-     * @throws StartModuleActivatorException
 	 */
 	void start(ModuleContext context);
 	
@@ -27,7 +26,6 @@ public interface ModuleActivator {
 	/**
 	 * 停止
 	 * @param context 上下文
-	 * @throws Exception
 	 */
 	void stop(ModuleContext context);
 }

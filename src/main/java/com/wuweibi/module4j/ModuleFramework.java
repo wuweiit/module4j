@@ -12,7 +12,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
-import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
 
@@ -42,6 +41,11 @@ public class ModuleFramework {
     private Configuration configuration;
 
 
+    /**
+     * 构造
+     * @param config 配置
+     * @throws Exception 异常
+     */
     public ModuleFramework(Map<String, String> config) throws Exception {
         this.configuration = new Configuration(config);
         context = new ModuleContext(config);
@@ -51,7 +55,7 @@ public class ModuleFramework {
     /**
      * 获取模块上下文对象
      *
-     * @return ModuleContext
+     * @return ModuleContext 上下文
      */
     public ModuleContext getModuleContext() {
         return context;
@@ -62,7 +66,6 @@ public class ModuleFramework {
      * 启动
      *
      * @throws Exception 异常
-     * @return
      */
     public void start() throws Exception {
         String modulesDir = configuration.getAutoDeployDir();

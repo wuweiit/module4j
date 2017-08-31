@@ -13,20 +13,21 @@ import org.slf4j.LoggerFactory;
  **/
 public abstract class SupperModule  implements ModuleActivator {
 
-    /**  */
+    /** 日志记录 */
     private final Logger logger = LoggerFactory.getLogger(ModuleUtils.class);
 
-    /**  */
+    /**  脚本工具 */
     private GroovyScriptUtil util;
 
-    /**  */
+    /** 路径  */
     private String path;
 
 
     /**
      *
-     * @param path adsa
-     * @return
+     * @param path 路径
+     * @return Class
+     * @throws Exception 异常
      */
     public Class require(String path) throws Exception {
         return util.loadGroovy("/src/" + path);

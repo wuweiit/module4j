@@ -67,7 +67,7 @@ public class Module implements Serializable {
 
     /**
      * 构造
-     * @param context
+     * @param context 上下文
      */
     public Module(ModuleContext context) {
         this.context = context;
@@ -76,9 +76,9 @@ public class Module implements Serializable {
 
     /**
      * 构造2
-     * @param activator
-     * @param config
-     * @param context
+     * @param activator 启动器
+     * @param config 配置
+     * @param context 上下文
      */
     public Module(ModuleActivator activator, JSONObject config,
                   ModuleContext context) {
@@ -128,7 +128,7 @@ public class Module implements Serializable {
      *
      * 获取配置信息
      *
-     * @return JSONObject
+     * @return JSONObject 配置
      */
     public JSONObject getConfig() {
         config.put(Module.CONFIG_STATUS, this.status);
@@ -151,7 +151,7 @@ public class Module implements Serializable {
     /**
      * 获取模块唯一标记
      *
-     * @return
+     * @return String
      */
     public String getId() {
         return this.config.getString(CONFIG_ID);
@@ -161,7 +161,7 @@ public class Module implements Serializable {
     /**
      * 获取模板的目录名称
      *
-     * @return
+     * @return String
      */
     public String getDirectory() {
         return config.getString(CONFIG_DIRECTORY);

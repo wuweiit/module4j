@@ -1,3 +1,18 @@
+
+### Maven 坐标
+
+
+
+
+```
+<dependency>
+   <groupId>com.wuweibi</groupId>
+    <artifactId>module4j</artifactId>
+    <version>0.0.1</version>
+</dependency>
+```
+
+
 ### Java 动态模块化框架
 
 OSGI相信大家比较熟悉，早有耳闻。但是OSGI是一个复杂的工程，学习曲线很高。本人曾经也被坑过最后放弃了OSGI。

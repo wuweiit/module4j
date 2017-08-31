@@ -28,8 +28,8 @@ public final class GroovyScriptUtil {
     /**
      * 构造
      *
-     * @param config
-     * @param loader
+     * @param config 配置
+     * @param loader 加载器
      */
     public GroovyScriptUtil(Map<String, Object> config, ScriptClassLoader loader) {
         this.moduleConfig = config;
@@ -40,8 +40,8 @@ public final class GroovyScriptUtil {
     /**
      * 加载脚本类
      *
-     * @param groovyFile
-     * @return
+     * @param groovyFile 脚本
+     * @return Class
      * @throws CompilationFailedException 异常
      * @throws IOException 异常
      * @throws ClassNotFoundException 异常
@@ -82,8 +82,7 @@ public final class GroovyScriptUtil {
      * 加载标签对象
      *
      * @param groovyName 脚本名称
-     * @return
-     * @throws Exception
+     * @return GroovyObject
      */
     public GroovyObject loadTagObject(String groovyName) {
         GroovyObject obj = null;
