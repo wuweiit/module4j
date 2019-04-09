@@ -3,11 +3,11 @@ package com.wuweibi.module4j.module;
 
 import com.alibaba.fastjson.JSONObject;
 import com.wuweibi.module4j.ModuleActivator;
+import com.wuweibi.module4j.config.PackageInfo;
 import com.wuweibi.module4j.exception.StartModuleActivatorException;
 import com.wuweibi.module4j.exception.StopModuleActivatorException;
 
 import java.io.Serializable;
-import java.util.Map;
 
 
 /**
@@ -55,7 +55,7 @@ public class Module implements Serializable {
     private ModuleActivator activator;
 
     /** 配置信息  */
-    private JSONObject config;
+    private PackageInfo config;
 
     /** 上下文对象 */
     private ModuleContext context;
@@ -80,7 +80,7 @@ public class Module implements Serializable {
      * @param config 配置
      * @param context 上下文
      */
-    public Module(ModuleActivator activator, JSONObject config,
+    public Module(ModuleActivator activator, PackageInfo config,
                   ModuleContext context) {
         super();
         this.activator = activator;
@@ -97,7 +97,7 @@ public class Module implements Serializable {
     public void start() throws StartModuleActivatorException {
         synchronized (Module.class) {
             if (status == STATUS_READY || status == STATUS_STOP) {
-                context.moduleThreadLocal.set(this); // 绑定当前模块
+                context.setThreadLocal(this); // 绑定当前模块
                 activator.start(context);
                 status = STATUS_RUNING;
                 config.put("status", status);
@@ -114,7 +114,7 @@ public class Module implements Serializable {
     public void stop() throws StopModuleActivatorException {
         synchronized (Module.class) {
             if (status == STATUS_RUNING) {
-                context.moduleThreadLocal.set(this); // 绑定当前模块
+                context.setThreadLocal(this); // 绑定当前模块
                 activator.stop(context);
                 status = STATUS_STOP;
                 config.put("status", status);

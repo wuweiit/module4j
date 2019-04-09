@@ -8,7 +8,7 @@ import java.util.Map;
  * 用于全局的配置，定义模块路径相关信息。
  *
  * @author marker
- *         <p>
+ *
  *         Created by ROOT on 2016/10/27.
  */
 public final class Configuration {

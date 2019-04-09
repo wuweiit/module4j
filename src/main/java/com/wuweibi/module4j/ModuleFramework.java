@@ -80,6 +80,7 @@ public class ModuleFramework {
                 if (!moduleFile.isDirectory()){ // 检测是否是文件夹
                     logger.warn("this {} is not directory! please check config: {}",
                             file.getAbsolutePath(), Configuration.AUTO_DEPLOY_DIR);
+                    continue;
                 }
 
                 String fileName = moduleFile.getName(); // 类型

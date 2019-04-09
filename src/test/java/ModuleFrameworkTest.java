@@ -1,7 +1,6 @@
 import com.wuweibi.module4j.ModuleFramework;
 import com.wuweibi.module4j.config.Configuration;
 import com.wuweibi.module4j.module.ModuleContext;
-import org.junit.Test;
 
 import java.io.File;
 import java.util.HashMap;
@@ -38,7 +37,7 @@ public class ModuleFrameworkTest {
             moduleFramework.start();
 
             // 做操作
-           // context.install("D:\\modules\\chanel\\");
+//            context.install("D:\\modules\\chanel\\");
 
 
 

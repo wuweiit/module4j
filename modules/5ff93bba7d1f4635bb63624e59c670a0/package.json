@@ -5,7 +5,7 @@
 	"version" : "0.1.0",
 	"description" : "系统核心模块",
     "icon" : "images/demo.jpg",
-	"activator":"./src/activator.groovy",
+	"activator":"./src/ModuleActivatorImpl.groovy",
 	"dependencies":{
 		"baidumapkit": "^1.1.0"
 	},

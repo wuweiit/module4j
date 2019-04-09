@@ -1,22 +1,22 @@
 package com.wuweibi.module4j.module;
 
 
-import com.alibaba.fastjson.JSON;
-import com.alibaba.fastjson.JSONObject;
-import com.wuweibi.module4j.ModuleActivator;
 import com.wuweibi.module4j.SupperModule;
 import com.wuweibi.module4j.config.Configuration;
-import com.wuweibi.module4j.exception.*;
+import com.wuweibi.module4j.config.PackageInfo;
+import com.wuweibi.module4j.exception.GroovyActivatorLoadException;
+import com.wuweibi.module4j.exception.ModuleErrorException;
+import com.wuweibi.module4j.exception.ModuleMoveException;
+import com.wuweibi.module4j.exception.StopModuleActivatorException;
 import com.wuweibi.module4j.groovy.GroovyScriptUtil;
 import com.wuweibi.module4j.groovy.ScriptClassLoader;
 import com.wuweibi.module4j.listener.InstallListenter;
 import com.wuweibi.utils.FileTools;
-import javassist.*;
-import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.*;
+import java.io.File;
+import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -33,8 +33,6 @@ public class ModuleContext {
      */
     private final Logger logger = LoggerFactory.getLogger(ModuleContext.class);
 
-    /** 文本文件UTF-8编码 */
-    public static final String CHARACTER = "UTF-8";
 
 
 
@@ -42,18 +40,16 @@ public class ModuleContext {
     private Map<String, Module> modules = new ConcurrentHashMap<>();
 
 
-    /**  */
-    private Map<String, String> config;
 
     /**  */
     private Configuration configuration;
 
     /** 安装监听器 */
-    private List<InstallListenter> listenters = new ArrayList<>(3);
+    private List<InstallListenter> listenters = new ArrayList<>();
 
 
     /** 绑定当前的模块 */
-    public static final ThreadLocal<Module> moduleThreadLocal = new ThreadLocal<>();
+    public static final ThreadLocal<Module> MODULE_THREAD_LOCAL = new ThreadLocal<>();
 
     /**
      * 构造
@@ -106,18 +102,9 @@ public class ModuleContext {
         String packageJson = moduleFile.getAbsolutePath() + File.separator + "package.json";
         logger.info("loading {}", packageJson);
 
-        String json = "{\"error\":\"invalid config info\"}";
-        try {
-            File filePackageJson = new File(packageJson);
-            json = FileUtils.readFileToString(filePackageJson, CHARACTER);
-        } catch (IOException e) {
-            throw new PackageJsonNotFoundException();
-        }
 
-        JSONObject config = JSON.parseObject(json);
-        if (config.containsKey("error")){
-            throw new PackageJsonErrorException();
-        }
+        PackageInfo pageInfo = PackageInfo.parseString(packageJson);
+
 
 
         // 判断上级路径是否是模块目录
@@ -125,14 +112,14 @@ public class ModuleContext {
         File modulesFile = new File(configuration.getAutoDeployDir());
 
         // 设置模块的目录名称
-        config.put(Configuration.CONFIG_DIRECTORY, modulesFile.getName());
+        pageInfo.put(Configuration.CONFIG_DIRECTORY, modulesFile.getName());
 
         if (modulesFile.equals(parentFile)) { // 若路径相同
             logger.debug("install path is modules path!");
         } else { // 路径不同
 
             // 拷贝文件夹到模块目录
-            String moduleId = (String) config.get("id");
+            String moduleId =  pageInfo.getId();
 
             File toFile = modulesFile;
             try {
@@ -150,7 +137,7 @@ public class ModuleContext {
 
 
         // 加载 ActivatorFile
-        String activatorFile = configuration.getActivatorFile().replaceFirst(".groovy", "");
+        String activatorFile = pageInfo.getActivatorFile();
 
         String modulePath = moduleFile.getAbsolutePath() + File.separator;
 
@@ -175,7 +162,7 @@ public class ModuleContext {
             activator = (SupperModule) clzz.newInstance();
 
 
-            activator.setUtil(new GroovyScriptUtil(config, loader));
+            activator.setUtil(new GroovyScriptUtil(pageInfo, loader));
             activator.setPath(modulePath);
 
         } catch (Exception e) {
@@ -184,7 +171,7 @@ public class ModuleContext {
 
         logger.info("build module complete...");
 
-        Module module = new Module(activator, config, this);
+        Module module = new Module(activator, pageInfo, this);
 
 
 
@@ -267,7 +254,7 @@ public class ModuleContext {
      * @return Module
      */
     public Module getModule() {
-        return moduleThreadLocal.get();
+        return MODULE_THREAD_LOCAL.get();
     }
 
 
@@ -275,7 +262,15 @@ public class ModuleContext {
      * 添加安装监听器
      * @param listener 监听器
      */
-    public void addInstallListener(InstallListenter listener){
+    public void addInstallListener(InstallListenter listener) {
         this.listenters.add(listener);
+    }
+
+    /**
+     * 设置
+     * @param threadLocal 锁
+     */
+    public void setThreadLocal(Module threadLocal) {
+        this.MODULE_THREAD_LOCAL.set(threadLocal);
     }
 }
