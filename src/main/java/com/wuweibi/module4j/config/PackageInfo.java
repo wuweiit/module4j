@@ -19,13 +19,14 @@ import java.io.IOException;
  *
  *
  * @author marker
- * @create 2019-04-09 10:07
+ *  2019-04-09 10:07
  **/
 public class PackageInfo extends JSONObject {
 
     /** 文本文件UTF-8编码 */
     public static final String CHARACTER = "UTF-8";
-    private String activatorFile;
+
+
 
     public PackageInfo(){ }
 
@@ -61,7 +62,7 @@ public class PackageInfo extends JSONObject {
 
     /**
      * 获取ID
-     * @return
+     * @return String
      */
     public String getId() {
         return (String) this.get("id");
@@ -70,7 +71,7 @@ public class PackageInfo extends JSONObject {
 
     /**
      * 获取启动入口
-     * @return
+     * @return  String
      */
     public String getActivatorFile() {
         String activator = this.getString("activator");
